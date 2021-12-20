@@ -16,7 +16,9 @@ Contact: jsyoon0823@gmail.com
 """
 
 # Necessary Packages
-import tensorflow as tf
+import pathlib
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import logging
 tf.get_logger().setLevel(logging.ERROR)
 import numpy as np
@@ -60,13 +62,13 @@ class mrnn ():
     with tf.compat.v1.Session() as sess:        
         
       # input place holders
-      target = tf.placeholder(tf.float32, [self.seq_len, None, 1])
-      mask = tf.placeholder(tf.float32, [self.seq_len, None, 1])
+      target = tf.compat.v1.placeholder(tf.float32, [self.seq_len, None, 1])
+      mask = tf.compat.v1.placeholder(tf.float32, [self.seq_len, None, 1])
                 
       # Build rnn object
       rnn = biGRUCell(3, self.h_dim, 1)    
       outputs = rnn.get_outputs()
-      loss = tf.sqrt(tf.reduce_mean(tf.square(mask*outputs - mask*target)))
+      loss = tf.sqrt(tf.reduce_mean(input_tensor=tf.square(mask*outputs - mask*target)))
       optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)
       train = optimizer.minimize(loss)  
       
@@ -101,7 +103,7 @@ class mrnn ():
                 'backward_input': rnn._inputs_rev}
       outputs = {'imputation': outputs}
         
-      save_file_name = 'tmp/mrnn_imputation/rnn_feature_' + str(f+1) + '/'
+      save_file_name = str(pathlib.Path('tmp/mrnn_imputation/rnn_feature_' + str(f+1) + '/'))
       tf.compat.v1.saved_model.simple_save(sess, save_file_name, 
                                            inputs, outputs)  
 
@@ -178,17 +180,17 @@ class mrnn ():
     m = np.reshape(m, [self.no * self.seq_len, self.dim])
     
     # input place holders
-    x_input = tf.placeholder(tf.float32, [None, self.dim])
-    target = tf.placeholder(tf.float32, [None, self.dim])
-    mask = tf.placeholder(tf.float32, [None, self.dim])
+    x_input = tf.compat.v1.placeholder(tf.float32, [None, self.dim])
+    target = tf.compat.v1.placeholder(tf.float32, [None, self.dim])
+    mask = tf.compat.v1.placeholder(tf.float32, [None, self.dim])
 
     # build a FC network
     U = tf.compat.v1.get_variable("U", shape=[self.dim, self.dim],
-                                  initializer=tf.contrib.layers.xavier_initializer())
+                                  initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
     V1 = tf.compat.v1.get_variable("V1", shape=[self.dim, self.dim],
-                                   initializer=tf.contrib.layers.xavier_initializer())
+                                   initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
     V2 = tf.compat.v1.get_variable("V2", shape=[self.dim, self.dim],
-                                   initializer=tf.contrib.layers.xavier_initializer())
+                                   initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"))
     b = tf.Variable(tf.random.normal([self.dim]))
     
     L1 = tf.nn.sigmoid((tf.matmul(x_input, tf.linalg.set_diag(U, np.zeros([self.dim,]))) + \
@@ -202,7 +204,7 @@ class mrnn ():
     outputs = tf.nn.sigmoid(hypothesis)
     
     # reshape out for sequence_loss
-    loss = tf.sqrt(tf.reduce_mean(tf.square(outputs - target)) )
+    loss = tf.sqrt(tf.reduce_mean(input_tensor=tf.square(outputs - target)) )
 
     # Optimizer
     optimizer = tf.compat.v1.train.AdamOptimizer(self.learning_rate)   
@@ -226,7 +228,7 @@ class mrnn ():
               'mask': mask}
     outputs = {'imputation': outputs}
         
-    save_file_name = 'tmp/mrnn_imputation/fc_feature/'
+    save_file_name = str(pathlib.Path('tmp/mrnn_imputation/fc_feature/'))
     tf.compat.v1.saved_model.simple_save(sess, save_file_name, 
                                          inputs, outputs)  
       

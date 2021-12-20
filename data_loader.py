@@ -79,4 +79,3 @@ def data_loader (file_name = 'data/google.csv', seq_len = 7,
   x = np.nan_to_num(x, 0)
 
   return x, m, t, ori_x       
-   

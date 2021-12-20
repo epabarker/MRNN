@@ -37,7 +37,7 @@ def MinMaxScaler(data):
   return normalized_data, norm_parameters
 
 
-def imputation_performance (ori_x, imputed_x, m, metric_name):
+def imputation_performance (ori_x, imputed_x, m, metric_name, missing_rate):
   """Performance metrics for imputation.
   
   Args:
@@ -65,6 +65,12 @@ def imputation_performance (ori_x, imputed_x, m, metric_name):
   elif metric_name == 'mse':
     performance = mean_squared_error(ori_x, imputed_x, 1-m)
   elif metric_name == 'rmse':
-    performance = np.sqrt(mean_squared_error(ori_x, imputed_x, 1-m))
+      if missing_rate == 0:
+          print("no missingness for rmse evaluation. set to nan.")
+          performance = np.nan
+      else:
+          ori_x_rmse = ori_x.copy()
+          ori_x_rmse[np.isnan(ori_x_rmse)] = 0
+          performance = mean_squared_error(ori_x_rmse, imputed_x,squared=False)
     
   return performance
